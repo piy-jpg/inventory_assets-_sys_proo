@@ -236,8 +236,6 @@ export const useRealTimeUpdates = (options = {}) => {
     // Subscribe to polling updates
     const unsubscribePolling = realTimeEmitter.subscribe('polling:update', (data) => {
       setLastUpdate(data.timestamp);
-      // Refresh all active queries when polling
-      queryClient.invalidateQueries();
     });
 
     return () => {
