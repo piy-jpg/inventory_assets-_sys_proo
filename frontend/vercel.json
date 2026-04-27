@@ -25,12 +25,12 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://smart-inventory-backend-gold.vercel.app",
+    "REACT_APP_API_URL": "https://smart-inventory-backend-gold.vercel.app/api",
     "REACT_APP_SOCKET_URL": "https://smart-inventory-backend-gold.vercel.app"
   },
   "build": {
     "env": {
-      "REACT_APP_API_URL": "https://smart-inventory-backend-gold.vercel.app",
+      "REACT_APP_API_URL": "https://smart-inventory-backend-gold.vercel.app/api",
       "REACT_APP_SOCKET_URL": "https://smart-inventory-backend-gold.vercel.app"
     }
   }

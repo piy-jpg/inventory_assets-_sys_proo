@@ -114,8 +114,32 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/demo', demoRoutes);
 
+const apiStatusPayload = () => ({
+  success: true,
+  message: 'Smart Inventory Management System API',
+  version: '1.0.0',
+  status: 'running',
+  timestamp: new Date().toISOString(),
+});
+
+app.get('/', (req, res) => {
+  res.status(200).json(apiStatusPayload());
+});
+
+app.get('/api', (req, res) => {
+  res.status(200).json(apiStatusPayload());
+});
+
 // Health check
 app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),

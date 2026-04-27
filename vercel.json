@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://smart-inventory-backend.vercel.app/api/$1"
+      "dest": "https://smart-inventory-backend-gold.vercel.app/api/$1"
     },
     {
       "src": "/static/(.*)",
@@ -48,6 +48,7 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://smart-inventory-backend.vercel.app"
+    "REACT_APP_API_URL": "https://smart-inventory-backend-gold.vercel.app/api",
+    "REACT_APP_SOCKET_URL": "https://smart-inventory-backend-gold.vercel.app"
   }
 }

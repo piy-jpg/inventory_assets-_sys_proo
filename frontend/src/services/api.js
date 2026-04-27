@@ -16,8 +16,26 @@ import {
 } from '../data/customerData.js';
 
 // API configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
+const normalizeApiBaseUrl = (value) => {
+  const fallback = 'http://localhost:3001/api';
+  const rawValue = (value || fallback).trim();
+  const trimmedValue = rawValue.replace(/\/+$/, '');
+
+  if (/\/api$/i.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  return `${trimmedValue}/api`;
+};
+
+const normalizeSocketUrl = (value) => {
+  const fallback = 'http://localhost:3001';
+  const rawValue = (value || fallback).trim();
+  return rawValue.replace(/\/+$/, '').replace(/\/api$/i, '');
+};
+
+const API_BASE_URL = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
+const SOCKET_URL = normalizeSocketUrl(process.env.REACT_APP_SOCKET_URL || process.env.REACT_APP_API_URL);
 const isDevelopment = process.env.NODE_ENV === 'development';
 const API_TOKEN_KEY = 'token';
 const CUSTOMERS_STORAGE_KEY = 'customersRealtime';
