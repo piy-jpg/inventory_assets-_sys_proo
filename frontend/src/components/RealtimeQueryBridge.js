@@ -27,9 +27,16 @@ const RealtimeQueryBridge = ({ enabled = true }) => {
   useEffect(() => {
     if (!enabled) return undefined;
 
+    const token = localStorage.getItem('token');
+    const isLocalDemoToken = !token || token.startsWith('mock-jwt-token-');
+    const isVercelSocketTarget = /https?:\/\/[^/]*vercel\.app(?:\/|$)/i.test(SOCKET_URL);
+
+    if (isLocalDemoToken || isVercelSocketTarget) {
+      return undefined;
+    }
+
     let socket;
     try {
-      const token = localStorage.getItem('token');
       socket = io(SOCKET_URL, {
         auth: token ? { token } : undefined,
         transports: ['websocket', 'polling'],

@@ -59,10 +59,11 @@ class RealTimeEventEmitter {
 
     const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
     const isLocalDemoToken = !token || token.startsWith('mock-jwt-token-');
+    const isVercelSocketTarget = /https?:\/\/[^/]*vercel\.app(?:\/|$)/i.test(SOCKET_URL);
 
-    if (isLocalDemoToken) {
+    if (isLocalDemoToken || isVercelSocketTarget) {
       this.isConnecting = false;
-      this.emit('connection', { status: 'connected', mode: 'local-demo' });
+      this.emit('connection', { status: 'polling', mode: isVercelSocketTarget ? 'serverless' : 'local-demo' });
       this.fallbackToPolling();
       return;
     }

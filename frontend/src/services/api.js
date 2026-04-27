@@ -5174,7 +5174,106 @@ const authAPI = {
     return { data };
   },
 };
-const analyticsAPI = mockApi.inventory; // Alias for analytics management
+const getTransactionsAnalysis = async (params = {}) => {
+  const backendAvailable = await checkBackendAvailability();
+  const queryParams = new URLSearchParams();
+
+  if (params.period) {
+    queryParams.append('period', params.period);
+  }
+
+  if (backendAvailable) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/analytics/transactions/analysis${queryParams.toString() ? `?${queryParams}` : ''}`,
+        {
+          headers: buildHeaders(true),
+        }
+      );
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.log('Backend transaction analytics failed, falling back to mock data');
+    }
+  }
+
+  const transactions = Array.isArray(mockData.transactions) ? mockData.transactions : [];
+  const periodDays = Number.parseInt(params.period, 10) || 30;
+  const startDate = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000);
+
+  const recentTransactions = transactions.filter((transaction) => {
+    const rawDate = transaction?.date || transaction?.transaction_date || transaction?.createdAt;
+    const parsedDate = rawDate ? new Date(rawDate) : null;
+    return parsedDate && !Number.isNaN(parsedDate.getTime()) && parsedDate >= startDate;
+  });
+
+  const trendMap = new Map();
+  const revenueMap = new Map();
+  const supplierMap = new Map();
+  const paymentStatusMap = new Map();
+
+  recentTransactions.forEach((transaction) => {
+    const rawDate = transaction?.date || transaction?.transaction_date || transaction?.createdAt;
+    const parsedDate = rawDate ? new Date(rawDate) : new Date();
+    const dateKey = Number.isNaN(parsedDate.getTime())
+      ? new Date().toISOString().split('T')[0]
+      : parsedDate.toISOString().split('T')[0];
+    const amount = Number(
+      transaction?.amount?.total ??
+      transaction?.amount ??
+      transaction?.total_amount ??
+      transaction?.total ??
+      0
+    );
+    const type = transaction?.type || transaction?.transaction_type || 'other';
+    const supplierName =
+      transaction?.parties?.from ||
+      transaction?.supplier?.name ||
+      transaction?.supplier_name ||
+      'Unknown supplier';
+    const paymentStatus = transaction?.payment?.status || transaction?.status || 'unknown';
+
+    const existingTrend = trendMap.get(dateKey) || { _id: dateKey, totalAmount: 0, count: 0 };
+    existingTrend.totalAmount += amount;
+    existingTrend.count += 1;
+    trendMap.set(dateKey, existingTrend);
+
+    const existingRevenue = revenueMap.get(type) || { _id: type, totalAmount: 0, count: 0, avgAmount: 0 };
+    existingRevenue.totalAmount += amount;
+    existingRevenue.count += 1;
+    existingRevenue.avgAmount = existingRevenue.totalAmount / existingRevenue.count;
+    revenueMap.set(type, existingRevenue);
+
+    if (type === 'purchase') {
+      const existingSupplier = supplierMap.get(supplierName) || { _id: supplierName, totalAmount: 0, count: 0 };
+      existingSupplier.totalAmount += amount;
+      existingSupplier.count += 1;
+      supplierMap.set(supplierName, existingSupplier);
+    }
+
+    const existingPaymentStatus = paymentStatusMap.get(paymentStatus) || { _id: paymentStatus, count: 0, totalAmount: 0 };
+    existingPaymentStatus.count += 1;
+    existingPaymentStatus.totalAmount += amount;
+    paymentStatusMap.set(paymentStatus, existingPaymentStatus);
+  });
+
+  return {
+    success: true,
+    data: {
+      transactionTrends: Array.from(trendMap.values()).sort((a, b) => a._id.localeCompare(b._id)),
+      revenueByType: Array.from(revenueMap.values()),
+      topSuppliers: Array.from(supplierMap.values()).sort((a, b) => b.totalAmount - a.totalAmount).slice(0, 10),
+      paymentStatus: Array.from(paymentStatusMap.values()),
+    },
+  };
+};
+
+const analyticsAPI = {
+  ...mockApi.inventory,
+  getTransactionsAnalysis,
+};
 const demoAPI = mockApi.inventory; // Alias for demo management
 const aiAPI = {
   // AI API functions
