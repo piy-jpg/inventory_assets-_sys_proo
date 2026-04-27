@@ -5174,6 +5174,53 @@ const authAPI = {
     return { data };
   },
 };
+const getDashboardOverview = async () => {
+  const backendAvailable = await checkBackendAvailability();
+
+  if (backendAvailable) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/analytics/dashboard/overview`, {
+        headers: buildHeaders(true),
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.log('Backend dashboard overview failed, falling back to mock data');
+    }
+  }
+
+  const products = Array.isArray(mockData.products) ? mockData.products : [];
+  const assets = Array.isArray(mockData.assets) ? mockData.assets : [];
+  const sales = Array.isArray(mockData.sales) ? mockData.sales : [];
+  const purchases = Array.isArray(mockData.purchases) ? mockData.purchases : [];
+  const expenses = Array.isArray(mockData.expenses) ? mockData.expenses : [];
+  const alerts = Array.isArray(mockData.alerts) ? mockData.alerts : [];
+
+  const monthlySales = sales.reduce((sum, sale) => sum + Number(sale.total_amount || sale.total || sale.amount || 0), 0);
+  const monthlyPurchases = purchases.reduce((sum, purchase) => sum + Number(purchase.total_amount || purchase.total || purchase.amount || 0), 0);
+  const monthlyExpense = expenses.reduce((sum, expense) => sum + Number(expense.amount || expense.total || 0), 0);
+  const totalInventoryValue = products.reduce((sum, product) => {
+    const quantity = Number(product.quantity || product.stock || 0);
+    const unitCost = Number(product.price?.cost || product.price?.selling || product.price || 0);
+    return sum + quantity * unitCost;
+  }, 0);
+
+  return {
+    success: true,
+    data: {
+      totalInventoryValue,
+      lowStockCount: products.filter((product) => Number(product.quantity || 0) <= Number(product.minStock || product.reorderPoint || 0)).length,
+      activeAssets: assets.filter((asset) => asset.status === 'active').length,
+      monthlySales,
+      monthlyPurchases,
+      monthlyExpense,
+      activeAlerts: alerts.filter((alert) => alert.status === 'active').length,
+    },
+  };
+};
+
 const getTransactionsAnalysis = async (params = {}) => {
   const backendAvailable = await checkBackendAvailability();
   const queryParams = new URLSearchParams();
@@ -5272,6 +5319,7 @@ const getTransactionsAnalysis = async (params = {}) => {
 
 const analyticsAPI = {
   ...mockApi.inventory,
+  getDashboardOverview,
   getTransactionsAnalysis,
 };
 const demoAPI = mockApi.inventory; // Alias for demo management
